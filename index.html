@@ -260,7 +260,7 @@
             </div>
 
             <div class="control-tray">
-                <button id="muteBtn" class="btn-action" onclick="toggleMute()">Mute</button>
+                <button id="audioBtn" class="btn-action" onclick="toggleAudio()">Mute</button>
                 <button class="btn-action btn-stop-override" onclick="stopSession()">Stop</button>
             </div>
         </div>
@@ -281,61 +281,72 @@
         let cyclesRemaining = 0;
         let currentCycleState = 'exhale'; 
         let isMuted = false;
-        let femaleVoice = null;
+        
+        // Master Audio Context initialization for iOS Web Audio bypass
+        let audioCtx = null;
 
-        // Cache natural female voice configurations early
-        function loadVoiceEngine() {
-            if ('speechSynthesis' in window) {
-                const assignVoice = () => {
-                    const voices = window.speechSynthesis.getVoices();
-                    // Prioritize premium/neural natural female options across OS platforms
-                    femaleVoice = voices.find(v => 
-                        (v.name.includes('Google US English') && v.name.includes('female')) ||
-                        v.name.includes('Microsoft Zira') || 
-                        v.name.includes('Siri') ||
-                        v.name.includes('Samantha') ||
-                        (v.lang.startsWith('en') && v.name.toLowerCase().includes('female'))
-                    ) || voices.find(v => v.lang.startsWith('en')); // Fallback safely to generic English
-                };
-                assignVoice();
-                if (window.speechSynthesis.onvoiceschanged !== undefined) {
-                    window.speechSynthesis.onvoiceschanged = assignVoice;
-                }
+        function initAudioEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // Forces iOS to unlock and resume suspension context from a physical click event branch
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
         }
-        loadVoiceEngine();
 
-        function speakStateInstruction(text) {
-            if (isMuted || !('speechSynthesis' in window)) return;
-            
-            // Shut down active speech buffer to prevent layout lag shifts
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            if (femaleVoice) utterance.voice = femaleVoice;
-            
-            utterance.rate = 0.9;  // Paced deliberately slower for a soothing effect
-            utterance.pitch = 1.05; // Normalizes resonance frequency
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function toggleMute() {
+        function toggleAudio() {
             isMuted = !isMuted;
-            const muteBtn = document.getElementById('muteBtn');
+            const audioBtn = document.getElementById('audioBtn');
             if (isMuted) {
-                muteBtn.innerText = "Unmute";
-                muteBtn.style.color = "#ffb300";
-                window.speechSynthesis.cancel();
+                audioBtn.innerText = "Unmute";
+                audioBtn.style.color = "#ffb300";
             } else {
-                muteBtn.innerText = "Mute";
-                muteBtn.style.color = "#ffffff";
-                // Promptly voice out current phase upon breaking mute state
-                const textEl = document.getElementById('stateText').innerText;
-                speakStateInstruction(textEl);
+                audioBtn.innerText = "Mute";
+                audioBtn.style.color = "#ffffff";
+                initAudioEngine();
             }
+        }
+
+        function playSynthSound(type) {
+            if (isMuted) return;
+            initAudioEngine();
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'inhale') {
+                // Rising Double Chime (Low to High)
+                triggerTone(293.66, now, 0.15, 'sine');       // D4
+                triggerTone(440.00, now + 0.12, 0.25, 'sine'); // A4
+            } else if (type === 'hold') {
+                // Singular Wooden Block Metronome Knock
+                triggerTone(329.63, now, 0.08, 'triangle');    // E4 (sharp decay)
+            } else if (type === 'exhale') {
+                // Descending Double Chime (High to Low)
+                triggerTone(440.00, now, 0.15, 'sine');       // A4
+                triggerTone(349.23, now + 0.15, 0.35, 'sine'); // F4
+            }
+        }
+
+        function triggerTone(freq, startTime, duration, waveType) {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = waveType;
+            osc.frequency.setValueAtTime(freq, startTime);
+            
+            gainNode.gain.setValueAtTime(0.06, startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
         }
 
         function initiatePreCountdown() {
+            initAudioEngine(); // Unlocks audio hardware tree on iOS device via explicit user input bound thread
             document.getElementById('setupScreen').style.display = 'none';
             const overlay = document.getElementById('countdownOverlay');
             const textEl = document.getElementById('countdownText');
@@ -349,7 +360,7 @@
                 count--;
                 if (count === 0) {
                     textEl.innerText = "Go!";
-                    playCountdownTone(880); 
+                    playCountdownTone(659.25); // E5 note 
                 } else if (count < 0) {
                     clearInterval(countInterval);
                     overlay.style.display = 'none';
@@ -378,7 +389,6 @@
         function stopSession() {
             clearInterval(sessionInterval);
             clearTimeout(cycleTimeout);
-            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
             
             document.getElementById('setupScreen').style.display = 'flex';
             document.getElementById('sessionScreen').style.display = 'none';
@@ -471,8 +481,8 @@
             updateCycleDisplay();
             viewport.className = 'animation-viewport state-active';
             
-            // Trigger voice instructions synchronously along with animation transitions
-            speakStateInstruction(textEl.innerText);
+            // Core Audio Synth Engine call hook
+            playSynthSound(currentCycleState);
             triggerHapticFeedback();
             
             cycleTimeout = setTimeout(runBreathingEngine, nextDelay);
@@ -487,31 +497,18 @@
         }
 
         function playCountdownTone(freq) {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, ctx.currentTime);
-            gain.gain.setValueAtTime(0.05, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.3);
+            if (isMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            triggerTone(freq, now, 0.2, 'sine');
         }
 
+        // Luxurious high-vibrance ambient tone pattern to mark end of meditation session
         function triggerCompletionChime() {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.8);
+            if (isMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            triggerTone(523.25, now, 0.4, 'sine');        // C5
+            triggerTone(659.25, now + 0.15, 0.5, 'sine');  // E5
+            triggerTone(783.99, now + 0.30, 0.8, 'sine');  // G5
         }
     </script>
 </body>
