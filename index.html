@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>4-2-6 Breathing</title>
+    <title>4-2-6 Paced Breathing</title>
     
-    <!-- APPLE HOME SCREEN WEB APP META TAGS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="4-2-6 Breath">
+    
+    <link id="appleTouchIcon" rel="apple-touch-icon" href="">
+    <link id="favicon" rel="shortcut icon" href="">
 
     <style>
         :root {
@@ -37,6 +39,7 @@
             height: 100%;
         }
 
+        /* Apple Watch Chassis Box */
         .watch-container {
             width: 320px;
             height: 380px;
@@ -60,6 +63,7 @@
             letter-spacing: -0.3px;
         }
 
+        /* Setup UI */
         .setup-screen {
             display: flex;
             flex-direction: column;
@@ -101,6 +105,7 @@
             box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
         }
 
+        /* Active Session Screen Setup */
         .session-screen {
             display: none;
             flex-direction: column;
@@ -125,6 +130,7 @@
             transition: color 0.3s ease;
         }
 
+        /* Preparation Onboarding Countdown Overlay */
         .countdown-overlay {
             display: none;
             position: absolute;
@@ -150,6 +156,7 @@
             100% { transform: scale(1.2); opacity: 0; }
         }
 
+        /* UNIFIED VISUAL ENGINE ARCHITECTURE */
         .animation-viewport {
             position: relative;
             width: 170px;
@@ -184,6 +191,7 @@
             transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Control Tray Layout */
         .control-tray {
             display: flex;
             width: 100%;
@@ -208,6 +216,7 @@
             border: 1px solid rgba(255, 69, 58, 0.2);
         }
 
+        /* --- UNIFIED STATE RUNTIME BINDINGS --- */
         .state-active .layer-1 {
             border-color: var(--state-color);
             animation: globalMorph var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1);
@@ -237,19 +246,16 @@
 <body>
 
     <div class="watch-container">
-        <!-- COUNTDOWN OVERLAY -->
         <div id="countdownOverlay" class="countdown-overlay">
             <div id="countdownText" class="countdown-text">3</div>
         </div>
 
-        <!-- SETUP CONFIGURATION SCREEN -->
         <div id="setupScreen" class="setup-screen">
             <h1>4-2-6 Breathing</h1>
             <select id="durationPicker"></select>
             <button class="btn-start" onclick="initiatePreCountdown()">Start</button>
         </div>
 
-        <!-- ACTIVE BREATHING SESSION SCREEN -->
         <div id="sessionScreen" class="session-screen">
             <div class="top-bar">
                 <span id="timerDisplay">02:00</span>
@@ -271,7 +277,45 @@
     </div>
 
     <script>
-        // DOM Generation target check loop
+        // GENERATE DEVICE-NATIVE RENDERED IMAGE STREAMS FOR APPLE SPRINGBOARD
+        function generateNativeIcon() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 180;
+            canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            
+            // Base Chassis plate background setup
+            ctx.fillStyle = '#050507';
+            ctx.fillRect(0, 0, 180, 180);
+            
+            // Inhale Ring (Cyan)
+            ctx.beginPath();
+            ctx.arc(90, 90, 50, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#00d2ff';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            
+            // Exhale Dash Ring (Green)
+            ctx.beginPath();
+            ctx.arc(90, 90, 35, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#00e676';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([6, 4]);
+            ctx.stroke();
+            
+            // Hold Center Orb Core (Amber Core)
+            ctx.beginPath();
+            ctx.arc(90, 90, 18, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255, 179, 0, 0.4)';
+            ctx.fill();
+            
+            // Export directly to base-64 standalone binary image strings
+            const dataUrl = canvas.toDataURL('image/png');
+            document.getElementById('appleTouchIcon').href = dataUrl;
+            document.getElementById('favicon').href = dataUrl;
+        }
+        generateNativeIcon();
+
         const picker = document.getElementById('durationPicker');
         if (picker) {
             for (let i = 2; i <= 10; i++) {
