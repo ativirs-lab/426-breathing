@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>4-2-6 Breathing</title>
+    
+    <!-- APPLE HOME SCREEN WEB APP META TAGS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="4-2-6 Breath">
+
+    <style>
+        :root {
+            --bg-color: #050507;
+            --inhale-color: #00d2ff;
+            --hold-color: #ffb300;
+            --exhale-color: #00e676;
+            
+            --state-duration: 4s;
+            --state-color: var(--inhale-color);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .watch-container {
+            width: 320px;
+            height: 380px;
+            background-color: #000000;
+            border-radius: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), inset 0 0 2px 1px rgba(255,255,255,0.15);
+            border: 6px solid #141416;
+            box-sizing: border-box;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 10px 0 5px 0;
+            font-weight: 500;
+            letter-spacing: -0.3px;
+        }
+
+        .setup-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            gap: 20px;
+        }
+
+        select {
+            background-color: #1c1c1e;
+            color: white;
+            border: 1px solid #2c2c2e;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 12px;
+            width: 85%;
+            text-align: center;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        button {
+            width: 85%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #007aff, #0051a8);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .session-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+
+        .top-bar {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #8e8e93;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cycle-counter {
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .countdown-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000000;
+            border-radius: 34px;
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .countdown-text {
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: #007aff;
+            animation: countZoom 1s infinite linear;
+        }
+
+        @keyframes countZoom {
+            0% { transform: scale(0.5); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+
+        .animation-viewport {
+            position: relative;
+            width: 170px;
+            height: 170px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fluid-layer {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 43% 57% 51% 49% / 47% 43% 57% 53%;
+            box-sizing: border-box;
+            background: transparent;
+            pointer-events: none;
+            border: 3px solid transparent;
+            transition: border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .layer-1 { z-index: 4; border-width: 3px; }
+        .layer-2 { border-width: 1px; border-style: dashed; opacity: 0.4; z-index: 2; }
+        .layer-glow { filter: blur(22px); opacity: 0.25; z-index: 1; border: none; transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .state-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-align: center;
+            color: #ffffff;
+            z-index: 10;
+            transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .control-tray {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-action {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-size: 0.8rem;
+            width: auto;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-weight: 500;
+        }
+
+        .btn-stop-override {
+            background-color: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+            border: 1px solid rgba(255, 69, 58, 0.2);
+        }
+
+        .state-active .layer-1 {
+            border-color: var(--state-color);
+            animation: globalMorph var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .state-active .layer-2 {
+            border-color: var(--state-color);
+            animation: globalMorph var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1), spin 12s infinite linear;
+        }
+        .state-active .layer-glow {
+            background-color: var(--state-color);
+            animation: globalGlow var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .state-active .state-text { color: var(--state-color); }
+
+        @keyframes globalMorph {
+            0% { transform: scale(var(--start-scale)); border-radius: 43% 57% 51% 49% / 47% 43% 57% 53%; }
+            50% { border-radius: 48% 52% 45% 55% / 53% 48% 52% 47%; }
+            100% { transform: scale(var(--end-scale)); border-radius: 50%; }
+        }
+        @keyframes globalGlow {
+            0% { transform: scale(calc(var(--start-scale) * 1.3)); opacity: var(--start-opacity); }
+            100% { transform: scale(calc(var(--end-scale) * 1.5)); opacity: var(--end-opacity); }
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="watch-container">
+        <!-- COUNTDOWN OVERLAY -->
+        <div id="countdownOverlay" class="countdown-overlay">
+            <div id="countdownText" class="countdown-text">3</div>
+        </div>
+
+        <!-- SETUP CONFIGURATION SCREEN -->
+        <div id="setupScreen" class="setup-screen">
+            <h1>4-2-6 Breathing</h1>
+            <select id="durationPicker"></select>
+            <button class="btn-start" onclick="initiatePreCountdown()">Start</button>
+        </div>
+
+        <!-- ACTIVE BREATHING SESSION SCREEN -->
+        <div id="sessionScreen" class="session-screen">
+            <div class="top-bar">
+                <span id="timerDisplay">02:00</span>
+                <span id="cycleDisplay" class="cycle-counter">Cycles: --</span>
+            </div>
+
+            <div id="animationViewport" class="animation-viewport">
+                <div class="fluid-layer layer-glow"></div>
+                <div class="fluid-layer layer-2"></div>
+                <div class="fluid-layer layer-1"></div>
+                <div id="stateText" class="state-text">Inhale</div>
+            </div>
+
+            <div class="control-tray">
+                <button id="audioBtn" class="btn-action" onclick="toggleAudio()">Mute</button>
+                <button class="btn-action btn-stop-override" onclick="stopSession()">Stop</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Generation target check loop
+        const picker = document.getElementById('durationPicker');
+        if (picker) {
+            for (let i = 2; i <= 10; i++) {
+                let opt = document.createElement('option');
+                opt.value = i;
+                opt.innerHTML = `${i} Minutes`;
+                picker.appendChild(opt);
+            }
+        }
+
+        let sessionInterval = null;
+        let cycleTimeout = null;
+        let timeRemaining = 0;
+        let cyclesRemaining = 0;
+        let currentCycleState = 'exhale'; 
+        let isMuted = false;
+        let audioCtx = null;
+
+        function initAudioEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            const audioBtn = document.getElementById('audioBtn');
+            if (audioBtn) {
+                if (isMuted) {
+                    audioBtn.innerText = "Unmute";
+                    audioBtn.style.color = "#ffb300";
+                } else {
+                    audioBtn.innerText = "Mute";
+                    audioBtn.style.color = "#ffffff";
+                    initAudioEngine();
+                }
+            }
+        }
+
+        function playSynthSound(type) {
+            if (isMuted) return;
+            initAudioEngine();
+            const now = audioCtx.currentTime;
+
+            if (type === 'inhale') {
+                triggerTone(293.66, now, 0.15, 'sine');       
+                triggerTone(440.00, now + 0.12, 0.25, 'sine'); 
+            } else if (type === 'hold') {
+                triggerTone(329.63, now, 0.08, 'triangle');    
+            } else if (type === 'exhale') {
+                triggerTone(440.00, now, 0.15, 'sine');       
+                triggerTone(349.23, now + 0.15, 0.35, 'sine'); 
+            }
+        }
+
+        function triggerTone(freq, startTime, duration, waveType) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = waveType;
+            osc.frequency.setValueAtTime(freq, startTime);
+            gainNode.gain.setValueAtTime(0.06, startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+
+        function initiatePreCountdown() {
+            initAudioEngine(); 
+            document.getElementById('setupScreen').style.display = 'none';
+            const overlay = document.getElementById('countdownOverlay');
+            const textEl = document.getElementById('countdownText');
+            overlay.style.display = 'flex';
+            
+            let count = 3;
+            textEl.innerText = count;
+            playCountdownTone(440); 
+            
+            let countInterval = setInterval(() => {
+                count--;
+                if (count === 0) {
+                    textEl.innerText = "Go!";
+                    playCountdownTone(659.25); 
+                } else if (count < 0) {
+                    clearInterval(countInterval);
+                    overlay.style.display = 'none';
+                    startSession();
+                } else {
+                    textEl.innerText = count;
+                    playCountdownTone(440);
+                }
+            }, 1000);
+        }
+
+        function startSession() {
+            const minutes = parseInt(picker.value);
+            timeRemaining = minutes * 60;
+            cyclesRemaining = Math.floor(timeRemaining / 12);
+            updateCycleDisplay();
+            
+            document.getElementById('sessionScreen').style.display = 'flex';
+            updateTimerDisplay();
+            
+            sessionInterval = setInterval(tickSession, 1000);
+            currentCycleState = 'exhale'; 
+            runBreathingEngine();
+        }
+
+        function stopSession() {
+            clearInterval(sessionInterval);
+            clearTimeout(cycleTimeout);
+            
+            document.getElementById('setupScreen').style.display = 'flex';
+            document.getElementById('sessionScreen').style.display = 'none';
+            document.getElementById('countdownOverlay').style.display = 'none';
+            document.getElementById('animationViewport').className = 'animation-viewport';
+        }
+
+        function tickSession() {
+            if (timeRemaining > 1) {
+                timeRemaining--;
+                updateTimerDisplay();
+            } else {
+                timeRemaining = 0;
+                updateTimerDisplay();
+                triggerCompletionChime();
+                stopSession();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const secs = (timeRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+        }
+
+        function updateCycleDisplay() {
+            const displayEl = document.getElementById('cycleDisplay');
+            if (!displayEl) return;
+            displayEl.innerText = `Cycles: ${cyclesRemaining}`;
+            
+            if (currentCycleState === 'inhale') displayEl.style.color = 'var(--inhale-color)';
+            if (currentCycleState === 'hold') displayEl.style.color = 'var(--hold-color)';
+            if (currentCycleState === 'exhale') displayEl.style.color = 'var(--exhale-color)';
+        }
+
+        function runBreathingEngine() {
+            const viewport = document.getElementById('animationViewport');
+            const textEl = document.getElementById('stateText');
+            const root = document.documentElement;
+            let nextDelay = 4000;
+
+            viewport.className = 'animation-viewport';
+            void viewport.offsetWidth; 
+
+            if (currentCycleState === 'exhale') {
+                currentCycleState = 'inhale';
+                textEl.innerText = "Inhale";
+                root.style.setProperty('--state-duration', '4s');
+                root.style.setProperty('--state-color', 'var(--inhale-color)');
+                root.style.setProperty('--start-scale', '0.85');
+                root.style.setProperty('--end-scale', '1.45');
+                root.style.setProperty('--start-opacity', '0.15');
+                root.style.setProperty('--end-opacity', '0.5');
+                nextDelay = 4000; 
+            } else if (currentCycleState === 'inhale') {
+                currentCycleState = 'hold';
+                textEl.innerText = "Hold";
+                root.style.setProperty('--state-duration', '2s');
+                root.style.setProperty('--state-color', 'var(--hold-color)');
+                root.style.setProperty('--start-scale', '1.45');
+                root.style.setProperty('--end-scale', '1.45');
+                root.style.setProperty('--start-opacity', '0.5');
+                root.style.setProperty('--end-opacity', '0.5');
+                nextDelay = 2000; 
+            } else if (currentCycleState === 'hold') {
+                currentCycleState = 'exhale';
+                textEl.innerText = "Exhale";
+                root.style.setProperty('--state-duration', '6s');
+                root.style.setProperty('--state-color', 'var(--exhale-color)');
+                root.style.setProperty('--start-scale', '1.45');
+                root.style.setProperty('--end-scale', '0.85');
+                root.style.setProperty('--start-opacity', '0.5');
+                root.style.setProperty('--end-opacity', '0.1');
+                nextDelay = 6000; 
+                
+                setTimeout(() => {
+                    if(cyclesRemaining > 0) {
+                        cyclesRemaining--;
+                        updateCycleDisplay();
+                    }
+                }, 6000);
+            }
+
+            updateCycleDisplay();
+            viewport.className = 'animation-viewport state-active';
+            playSynthSound(currentCycleState);
+            triggerHapticFeedback();
+            
+            cycleTimeout = setTimeout(runBreathingEngine, nextDelay);
+        }
+
+        function triggerHapticFeedback() {
+            if (navigator.vibrate) {
+                if (currentCycleState === 'inhale') navigator.vibrate([80]);
+                if (currentCycleState === 'hold') navigator.vibrate([40, 30]);
+                if (currentCycleState === 'exhale') navigator.vibrate([120]);
+            }
+        }
+
+        function playCountdownTone(freq) {
+            if (isMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            triggerTone(freq, now, 0.2, 'sine');
+        }
+
+        function triggerCompletionChime() {
+            if (isMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            triggerTone(523.25, now, 0.4, 'sine');        
+            triggerTone(659.25, now + 0.15, 0.5, 'sine');  
+            triggerTone(783.99, now + 0.30, 0.8, 'sine');  
+        }
+    </script>
+</body>
+</html>
