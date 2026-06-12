@@ -7,13 +7,13 @@
     <style>
         :root {
             --bg-color: #050507;
-            --INHALE-color: #00d2ff;
-            --HOLD-color: #ffb300;
-            --EXHALE-color: #00e676;
+            --inhale-color: #00d2ff;
+            --hold-color: #ffb300;
+            --exhale-color: #00e676;
             
             /* Shared animation drivers mapped by JS */
             --state-duration: 4s;
-            --state-color: var(--INHALE-color);
+            --state-color: var(--inhale-color);
         }
 
         body {
@@ -95,16 +95,6 @@
             box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
         }
 
-        .btn-stop {
-            background-color: rgba(255, 69, 58, 0.1);
-            color: #ff453a;
-            font-size: 0.85rem;
-            width: auto;
-            padding: 8px 24px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 69, 58, 0.2);
-        }
-
         /* Active Session Screen Setup */
         .session-screen {
             display: none;
@@ -166,7 +156,6 @@
             align-items: center;
         }
 
-        /* Core fluid layers sharing a single style framework */
         .fluid-layer {
             position: absolute;
             width: 90px;
@@ -179,25 +168,9 @@
             transition: border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .layer-1 {
-            z-index: 4;
-            border-width: 3px;
-        }
-
-        .layer-2 {
-            border-width: 1px;
-            border-style: dashed;
-            opacity: 0.4;
-            z-index: 2;
-        }
-
-        .layer-glow {
-            filter: blur(22px);
-            opacity: 0.25;
-            z-index: 1;
-            border: none;
-            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .layer-1 { z-index: 4; border-width: 3px; }
+        .layer-2 { border-width: 1px; border-style: dashed; opacity: 0.4; z-index: 2; }
+        .layer-glow { filter: blur(22px); opacity: 0.25; z-index: 1; border: none; transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 
         .state-text {
             font-size: 1.25rem;
@@ -208,58 +181,56 @@
             transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* --- UNIFIED STATE RUNTIME BINDINGS --- */
+        /* Control Tray Layout */
+        .control-tray {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            align-items: center;
+            gap: 10px;
+        }
 
+        .btn-action {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-size: 0.8rem;
+            width: auto;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-weight: 500;
+        }
+
+        .btn-stop-override {
+            background-color: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+            border: 1px solid rgba(255, 69, 58, 0.2);
+        }
+
+        /* --- UNIFIED STATE RUNTIME BINDINGS --- */
         .state-active .layer-1 {
             border-color: var(--state-color);
             animation: globalMorph var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
         .state-active .layer-2 {
             border-color: var(--state-color);
             animation: globalMorph var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1), spin 12s infinite linear;
         }
-
         .state-active .layer-glow {
             background-color: var(--state-color);
             animation: globalGlow var(--state-duration) forwards cubic-bezier(0.4, 0, 0.2, 1);
         }
+        .state-active .state-text { color: var(--state-color); }
 
-        .state-active .state-text {
-            color: var(--state-color);
-        }
-
-        /* MASTER SCALE & WAVE FORM CONTROLLER KEYFRAMES */
         @keyframes globalMorph {
-            0% {
-                transform: scale(var(--start-scale));
-                border-radius: 43% 57% 51% 49% / 47% 43% 57% 53%;
-            }
-            50% {
-                /* Continuous subtle structural asymmetry wobble midway through the phase duration */
-                border-radius: 48% 52% 45% 55% / 53% 48% 52% 47%;
-            }
-            100% {
-                transform: scale(var(--end-scale));
-                border-radius: 50%;
-            }
+            0% { transform: scale(var(--start-scale)); border-radius: 43% 57% 51% 49% / 47% 43% 57% 53%; }
+            50% { border-radius: 48% 52% 45% 55% / 53% 48% 52% 47%; }
+            100% { transform: scale(var(--end-scale)); border-radius: 50%; }
         }
-
         @keyframes globalGlow {
-            0% {
-                transform: scale(calc(var(--start-scale) * 1.3));
-                opacity: var(--start-opacity);
-            }
-            100% {
-                transform: scale(calc(var(--end-scale) * 1.5));
-                opacity: var(--end-opacity);
-            }
+            0% { transform: scale(calc(var(--start-scale) * 1.3)); opacity: var(--start-opacity); }
+            100% { transform: scale(calc(var(--end-scale) * 1.5)); opacity: var(--end-opacity); }
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -285,10 +256,13 @@
                 <div class="fluid-layer layer-glow"></div>
                 <div class="fluid-layer layer-2"></div>
                 <div class="fluid-layer layer-1"></div>
-                <div id="stateText" class="state-text">INHALE</div>
+                <div id="stateText" class="state-text">Inhale</div>
             </div>
 
-            <button class="btn-stop" onclick="stopSession()">Stop</button>
+            <div class="control-tray">
+                <button id="muteBtn" class="btn-action" onclick="toggleMute()">Mute</button>
+                <button class="btn-action btn-stop-override" onclick="stopSession()">Stop</button>
+            </div>
         </div>
     </div>
 
@@ -305,7 +279,61 @@
         let cycleTimeout = null;
         let timeRemaining = 0;
         let cyclesRemaining = 0;
-        let currentCycleState = 'EXHALE'; 
+        let currentCycleState = 'exhale'; 
+        let isMuted = false;
+        let femaleVoice = null;
+
+        // Cache natural female voice configurations early
+        function loadVoiceEngine() {
+            if ('speechSynthesis' in window) {
+                const assignVoice = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    // Prioritize premium/neural natural female options across OS platforms
+                    femaleVoice = voices.find(v => 
+                        (v.name.includes('Google US English') && v.name.includes('female')) ||
+                        v.name.includes('Microsoft Zira') || 
+                        v.name.includes('Siri') ||
+                        v.name.includes('Samantha') ||
+                        (v.lang.startsWith('en') && v.name.toLowerCase().includes('female'))
+                    ) || voices.find(v => v.lang.startsWith('en')); // Fallback safely to generic English
+                };
+                assignVoice();
+                if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                    window.speechSynthesis.onvoiceschanged = assignVoice;
+                }
+            }
+        }
+        loadVoiceEngine();
+
+        function speakStateInstruction(text) {
+            if (isMuted || !('speechSynthesis' in window)) return;
+            
+            // Shut down active speech buffer to prevent layout lag shifts
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (femaleVoice) utterance.voice = femaleVoice;
+            
+            utterance.rate = 0.9;  // Paced deliberately slower for a soothing effect
+            utterance.pitch = 1.05; // Normalizes resonance frequency
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('muteBtn');
+            if (isMuted) {
+                muteBtn.innerText = "Unmute";
+                muteBtn.style.color = "#ffb300";
+                window.speechSynthesis.cancel();
+            } else {
+                muteBtn.innerText = "Mute";
+                muteBtn.style.color = "#ffffff";
+                // Promptly voice out current phase upon breaking mute state
+                const textEl = document.getElementById('stateText').innerText;
+                speakStateInstruction(textEl);
+            }
+        }
 
         function initiatePreCountdown() {
             document.getElementById('setupScreen').style.display = 'none';
@@ -336,7 +364,6 @@
         function startSession() {
             const minutes = parseInt(picker.value);
             timeRemaining = minutes * 60;
-            
             cyclesRemaining = Math.floor(timeRemaining / 12);
             updateCycleDisplay();
             
@@ -344,13 +371,14 @@
             updateTimerDisplay();
             
             sessionInterval = setInterval(tickSession, 1000);
-            currentCycleState = 'EXHALE'; 
+            currentCycleState = 'exhale'; 
             runBreathingEngine();
         }
 
         function stopSession() {
             clearInterval(sessionInterval);
             clearTimeout(cycleTimeout);
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
             
             document.getElementById('setupScreen').style.display = 'flex';
             document.getElementById('sessionScreen').style.display = 'none';
@@ -381,9 +409,9 @@
             const displayEl = document.getElementById('cycleDisplay');
             displayEl.innerText = `Cycles: ${cyclesRemaining}`;
             
-            if (currentCycleState === 'INHALE') displayEl.style.color = 'var(--INHALE-color)';
-            if (currentCycleState === 'HOLD') displayEl.style.color = 'var(--HOLD-color)';
-            if (currentCycleState === 'EXHALE') displayEl.style.color = 'var(--EXHALE-color)';
+            if (currentCycleState === 'inhale') displayEl.style.color = 'var(--inhale-color)';
+            if (currentCycleState === 'hold') displayEl.style.color = 'var(--hold-color)';
+            if (currentCycleState === 'exhale') displayEl.style.color = 'var(--exhale-color)';
         }
 
         function runBreathingEngine() {
@@ -392,43 +420,39 @@
             const root = document.documentElement;
             let nextDelay = 4000;
 
-            // Instantly sever animation history strings to ensure clean phase initialization
             viewport.className = 'animation-viewport';
             void viewport.offsetWidth; 
 
-            if (currentCycleState === 'EXHALE') {
-                currentCycleState = 'INHALE';
-                textEl.innerText = "INHALE";
+            if (currentCycleState === 'exhale') {
+                currentCycleState = 'inhale';
+                textEl.innerText = "Inhale";
                 
-                // Scale up parameters mapped straight to keyframe bindings
                 root.style.setProperty('--state-duration', '4s');
-                root.style.setProperty('--state-color', 'var(--INHALE-color)');
+                root.style.setProperty('--state-color', 'var(--inhale-color)');
                 root.style.setProperty('--start-scale', '0.85');
                 root.style.setProperty('--end-scale', '1.45');
                 root.style.setProperty('--start-opacity', '0.15');
                 root.style.setProperty('--end-opacity', '0.5');
                 
                 nextDelay = 4000; 
-            } else if (currentCycleState === 'INHALE') {
-                currentCycleState = 'HOLD';
-                textEl.innerText = "HOLD";
+            } else if (currentCycleState === 'inhale') {
+                currentCycleState = 'hold';
+                textEl.innerText = "Hold";
                 
-                // Static scaling balance parameters to cleanly indicate standard duration limits
                 root.style.setProperty('--state-duration', '2s');
-                root.style.setProperty('--state-color', 'var(--HOLD-color)');
+                root.style.setProperty('--state-color', 'var(--hold-color)');
                 root.style.setProperty('--start-scale', '1.45');
                 root.style.setProperty('--end-scale', '1.45');
                 root.style.setProperty('--start-opacity', '0.5');
                 root.style.setProperty('--end-opacity', '0.5');
                 
                 nextDelay = 2000; 
-            } else if (currentCycleState === 'HOLD') {
-                currentCycleState = 'EXHALE';
-                textEl.innerText = "EXHALE";
+            } else if (currentCycleState === 'hold') {
+                currentCycleState = 'exhale';
+                textEl.innerText = "Exhale";
                 
-                // Symmetrical scale-down collapse metrics 
                 root.style.setProperty('--state-duration', '6s');
-                root.style.setProperty('--state-color', 'var(--EXHALE-color)');
+                root.style.setProperty('--state-color', 'var(--exhale-color)');
                 root.style.setProperty('--start-scale', '1.45');
                 root.style.setProperty('--end-scale', '0.85');
                 root.style.setProperty('--start-opacity', '0.5');
@@ -446,6 +470,9 @@
 
             updateCycleDisplay();
             viewport.className = 'animation-viewport state-active';
+            
+            // Trigger voice instructions synchronously along with animation transitions
+            speakStateInstruction(textEl.innerText);
             triggerHapticFeedback();
             
             cycleTimeout = setTimeout(runBreathingEngine, nextDelay);
@@ -453,9 +480,9 @@
 
         function triggerHapticFeedback() {
             if (navigator.vibrate) {
-                if (currentCycleState === 'INHALE') navigator.vibrate([80]);
-                if (currentCycleState === 'HOLD') navigator.vibrate([40, 30]);
-                if (currentCycleState === 'EXHALE') navigator.vibrate([120]);
+                if (currentCycleState === 'inhale') navigator.vibrate([80]);
+                if (currentCycleState === 'hold') navigator.vibrate([40, 30]);
+                if (currentCycleState === 'exhale') navigator.vibrate([120]);
             }
         }
 
