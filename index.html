@@ -306,4 +306,213 @@
         function toggleAudio() {
             isMuted = !isMuted;
             const audioBtn = document.getElementById('audioBtn');
-            if (is
+            if (isMuted) {
+                audioBtn.innerText = "Unmute";
+                audioBtn.style.color = "#ffb300";
+            } else {
+                audioBtn.innerText = "Mute";
+                audioBtn.style.color = "#ffffff";
+                initAudioEngine();
+            }
+        }
+
+        function playSynthSound(type) {
+            if (isMuted) return;
+            initAudioEngine();
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'inhale') {
+                triggerTone(293.66, now, 0.15, 'sine');       
+                triggerTone(440.00, now + 0.12, 0.25, 'sine'); 
+            } else if (type === 'hold') {
+                triggerTone(329.63, now, 0.08, 'triangle');    
+            } else if (type === 'exhale') {
+                triggerTone(440.00, now, 0.15, 'sine');       
+                triggerTone(349.23, now + 0.15, 0.35, 'sine'); 
+            }
+        }
+
+        function triggerTone(freq, startTime, duration, waveType) {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = waveType;
+            osc.frequency.setValueAtTime(freq, startTime);
+            
+            gainNode.gain.setValueAtTime(0.06, startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+
+        function initiatePreCountdown() {
+            initAudioEngine(); 
+            document.getElementById('setupScreen').style.display = 'none';
+            const overlay = document.getElementById('countdownOverlay');
+            const textEl = document.getElementById('countdownText');
+            overlay.style.display = 'flex';
+            
+            let count = 3;
+            textEl.innerText = count;
+            playCountdownTone(440); 
+            
+            let countInterval = setInterval(() => {
+                count--;
+                if (count === 0) {
+                    textEl.innerText = "Go!";
+                    playCountdownTone(659.25); 
+                } else if (count < 0) {
+                    clearInterval(countInterval);
+                    overlay.style.display = 'none';
+                    startSession();
+                } else {
+                    textEl.innerText = count;
+                    playCountdownTone(440);
+                }
+            }, 1000);
+        }
+
+        function startSession() {
+            const minutes = parseInt(picker.value);
+            timeRemaining = minutes * 60;
+            cyclesRemaining = Math.floor(timeRemaining / 12);
+            updateCycleDisplay();
+            
+            document.getElementById('sessionScreen').style.display = 'flex';
+            updateTimerDisplay();
+            
+            sessionInterval = setInterval(tickSession, 1000);
+            currentCycleState = 'exhale'; 
+            runBreathingEngine();
+        }
+
+        function stopSession() {
+            clearInterval(sessionInterval);
+            clearTimeout(cycleTimeout);
+            
+            document.getElementById('setupScreen').style.display = 'flex';
+            document.getElementById('sessionScreen').style.display = 'none';
+            document.getElementById('countdownOverlay').style.display = 'none';
+            
+            document.getElementById('animationViewport').className = 'animation-viewport';
+        }
+
+        function tickSession() {
+            if (timeRemaining > 1) {
+                timeRemaining--;
+                updateTimerDisplay();
+            } else {
+                timeRemaining = 0;
+                updateTimerDisplay();
+                triggerCompletionChime();
+                stopSession();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const secs = (timeRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+        }
+
+        function updateCycleDisplay() {
+            const displayEl = document.getElementById('cycleDisplay');
+            displayEl.innerText = `Cycles: ${cyclesRemaining}`;
+            
+            if (currentCycleState === 'inhale') displayEl.style.color = 'var(--inhale-color)';
+            if (currentCycleState === 'hold') displayEl.style.color = 'var(--hold-color)';
+            if (currentCycleState === 'exhale') displayEl.style.color = 'var(--exhale-color)';
+        }
+
+        function runBreathingEngine() {
+            const viewport = document.getElementById('animationViewport');
+            const textEl = document.getElementById('stateText');
+            const root = document.documentElement;
+            let nextDelay = 4000;
+
+            viewport.className = 'animation-viewport';
+            void viewport.offsetWidth; 
+
+            if (currentCycleState === 'exhale') {
+                currentCycleState = 'inhale';
+                textEl.innerText = "Inhale";
+                
+                root.style.setProperty('--state-duration', '4s');
+                root.style.setProperty('--state-color', 'var(--inhale-color)');
+                root.style.setProperty('--start-scale', '0.85');
+                root.style.setProperty('--end-scale', '1.45');
+                root.style.setProperty('--start-opacity', '0.15');
+                root.style.setProperty('--end-opacity', '0.5');
+                
+                nextDelay = 4000; 
+            } else if (currentCycleState === 'inhale') {
+                currentCycleState = 'hold';
+                textEl.innerText = "Hold";
+                
+                root.style.setProperty('--state-duration', '2s');
+                root.style.setProperty('--state-color', 'var(--hold-color)');
+                root.style.setProperty('--start-scale', '1.45');
+                root.style.setProperty('--end-scale', '1.45');
+                root.style.setProperty('--start-opacity', '0.5');
+                root.style.setProperty('--end-opacity', '0.5');
+                
+                nextDelay = 2000; 
+            } else if (currentCycleState === 'hold') {
+                currentCycleState = 'exhale';
+                textEl.innerText = "Exhale";
+                
+                root.style.setProperty('--state-duration', '6s');
+                root.style.setProperty('--state-color', 'var(--exhale-color)');
+                root.style.setProperty('--start-scale', '1.45');
+                root.style.setProperty('--end-scale', '0.85');
+                root.style.setProperty('--start-opacity', '0.5');
+                root.style.setProperty('--end-opacity', '0.1');
+                
+                nextDelay = 6000; 
+                
+                setTimeout(() => {
+                    if(cyclesRemaining > 0) {
+                        cyclesRemaining--;
+                        updateCycleDisplay();
+                    }
+                }, 6000);
+            }
+
+            updateCycleDisplay();
+            viewport.className = 'animation-viewport state-active';
+            
+            playSynthSound(currentCycleState);
+            triggerHapticFeedback();
+            
+            cycleTimeout = setTimeout(runBreathingEngine, nextDelay);
+        }
+
+        function triggerHapticFeedback() {
+            if (navigator.vibrate) {
+                if (currentCycleState === 'inhale') navigator.vibrate([80]);
+                if (currentCycleState === 'hold') navigator.vibrate([40, 30]);
+                if (currentCycleState === 'exhale') navigator.vibrate([120]);
+            }
+        }
+
+        function playCountdownTone(freq) {
+            if (isMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            triggerTone(freq, now, 0.2, 'sine');
+        }
+
+        function triggerCompletionChime() {
+            if (isMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            triggerTone(523.25, now, 0.4, 'sine');        
+            triggerTone(659.25, now + 0.15, 0.5, 'sine');  
+            triggerTone(783.99, now + 0.30, 0.8, 'sine');  
+        }
+    </script>
+</body>
+</html>
