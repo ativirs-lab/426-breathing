@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>4-2-6 Paced Breathing</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="4-2-6 Breath">
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180' width='180' height='180'><rect width='180' height='180' rx='40' fill='%23050507'/><circle cx='90' cy='90' r='50' fill='none' stroke='%2300d2ff' stroke-width='8'/><circle cx='90' cy='90' r='35' fill='none' stroke='%2300e676' stroke-width='4' stroke-dasharray='6 4'/><circle cx='90' cy='90' r='20' fill='%23ffb300' opacity='0.3'/></svg>">
+
     <style>
         :root {
             --bg-color: #050507;
@@ -27,6 +34,10 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
+            /* Prevents rubber-banding bounce behavior on iOS PWA launch instances */
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
 
         /* Apple Watch Chassis Box */
@@ -281,15 +292,12 @@
         let cyclesRemaining = 0;
         let currentCycleState = 'exhale'; 
         let isMuted = false;
-        
-        // Master Audio Context initialization for iOS Web Audio bypass
         let audioCtx = null;
 
         function initAudioEngine() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-            // Forces iOS to unlock and resume suspension context from a physical click event branch
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -315,16 +323,13 @@
             const now = audioCtx.currentTime;
 
             if (type === 'inhale') {
-                // Rising Double Chime (Low to High)
-                triggerTone(293.66, now, 0.15, 'sine');       // D4
-                triggerTone(440.00, now + 0.12, 0.25, 'sine'); // A4
+                triggerTone(293.66, now, 0.15, 'sine');       
+                triggerTone(440.00, now + 0.12, 0.25, 'sine'); 
             } else if (type === 'hold') {
-                // Singular Wooden Block Metronome Knock
-                triggerTone(329.63, now, 0.08, 'triangle');    // E4 (sharp decay)
+                triggerTone(329.63, now, 0.08, 'triangle');    
             } else if (type === 'exhale') {
-                // Descending Double Chime (High to Low)
-                triggerTone(440.00, now, 0.15, 'sine');       // A4
-                triggerTone(349.23, now + 0.15, 0.35, 'sine'); // F4
+                triggerTone(440.00, now, 0.15, 'sine');       
+                triggerTone(349.23, now + 0.15, 0.35, 'sine'); 
             }
         }
 
@@ -346,7 +351,7 @@
         }
 
         function initiatePreCountdown() {
-            initAudioEngine(); // Unlocks audio hardware tree on iOS device via explicit user input bound thread
+            initAudioEngine(); 
             document.getElementById('setupScreen').style.display = 'none';
             const overlay = document.getElementById('countdownOverlay');
             const textEl = document.getElementById('countdownText');
@@ -360,7 +365,7 @@
                 count--;
                 if (count === 0) {
                     textEl.innerText = "Go!";
-                    playCountdownTone(659.25); // E5 note 
+                    playCountdownTone(659.25); 
                 } else if (count < 0) {
                     clearInterval(countInterval);
                     overlay.style.display = 'none';
@@ -481,7 +486,6 @@
             updateCycleDisplay();
             viewport.className = 'animation-viewport state-active';
             
-            // Core Audio Synth Engine call hook
             playSynthSound(currentCycleState);
             triggerHapticFeedback();
             
@@ -502,13 +506,12 @@
             triggerTone(freq, now, 0.2, 'sine');
         }
 
-        // Luxurious high-vibrance ambient tone pattern to mark end of meditation session
         function triggerCompletionChime() {
             if (isMuted || !audioCtx) return;
             const now = audioCtx.currentTime;
-            triggerTone(523.25, now, 0.4, 'sine');        // C5
-            triggerTone(659.25, now + 0.15, 0.5, 'sine');  // E5
-            triggerTone(783.99, now + 0.30, 0.8, 'sine');  // G5
+            triggerTone(523.25, now, 0.4, 'sine');        
+            triggerTone(659.25, now + 0.15, 0.5, 'sine');  
+            triggerTone(783.99, now + 0.30, 0.8, 'sine');  
         }
     </script>
 </body>
